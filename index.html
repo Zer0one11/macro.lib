@@ -12,7 +12,7 @@
         button { padding: 10px 20px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
         .item { background: #21262d; padding: 12px; margin-top: 8px; border-radius: 6px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
         .ext-label { font-size: 12px; color: #8b949e; margin-top: 4px; display: block; }
-        .download-btn { color: #3fb950; text-decoration: none; font-weight: bold; font-size: 14px; border: 1px solid #3fb950; padding: 5px 10px; border-radius: 4px; }
+        .download-btn { color: #3fb950; cursor: pointer; font-weight: bold; font-size: 14px; border: 1px solid #3fb950; padding: 5px 10px; border-radius: 4px; background: transparent; }
         .download-btn:hover { background: #3fb950; color: white; }
         #loader { display: none; text-align: center; color: #8b949e; margin-bottom: 10px; }
     </style>
@@ -35,7 +35,6 @@
         const loader = document.getElementById('loader');
 
         if (!val) return;
-
         resDiv.innerHTML = '';
         loader.style.display = 'block';
 
@@ -47,7 +46,6 @@
             if (data.items && data.items.length > 0) {
                 data.items.forEach(file => {
                     const ext = file.name.split('.').pop();
-                    // Ссылка на скачивание файла напрямую
                     const rawUrl = `https://raw.githubusercontent.com/DRANONG/GDMacrosArchive/main/${file.path}`;
                     
                     const div = document.createElement('div');
@@ -57,7 +55,7 @@
                             <div style="font-weight: bold;">${file.name}</div>
                             <span class="ext-label">Расширение: ${ext}</span>
                         </div>
-                        <a href="${rawUrl}" download="${file.name}" target="_blank" class="download-btn">Скачать</a>
+                        <button class="download-btn" onclick="downloadFile('${rawUrl}', '${file.name}')">Скачать</button>
                     `;
                     resDiv.appendChild(div);
                 });
@@ -67,6 +65,23 @@
         } catch (e) {
             loader.style.display = 'none';
             resDiv.innerHTML = '<p style="color:red; text-align:center;">Ошибка сервера</p>';
+        }
+    }
+
+    // Функция для принудительного скачивания файла
+    async function downloadFile(url, filename) {
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Ошибка при скачивании:', error);
+            alert('Не удалось скачать файл напрямую.');
         }
     }
 </script>

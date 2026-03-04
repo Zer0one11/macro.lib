@@ -5,102 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GD Macros Search</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 700px; background: #161b22; padding: 30px; border-radius: 12px; border: 1px solid #30363d; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h2 { color: #58a6ff; text-align: center; margin-bottom: 25px; }
-        
-        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { 
-            flex-grow: 1; padding: 12px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 6px; font-size: 16px; outline: none;
-        }
-        input:focus { border-color: #58a6ff; }
-        
-        button { 
-            padding: 12px 25px; background: #238636; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s;
-        }
-        button:hover { background: #2ea043; }
-
-        #loader { display: none; text-align: center; margin: 20px 0; color: #8b949e; }
-        
-        .result-item { 
-            background: #21262d; padding: 15px; margin-top: 12px; border-radius: 8px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;
-        }
-        .info { display: flex; flex-direction: column; gap: 5px; }
-        .name { color: #58a6ff; font-weight: bold; font-size: 17px; }
-        
-        /* Тег расширения */
-        .ext-badge { 
-            display: inline-block; padding: 2px 8px; background: #30363d; color: #f0f6fc; border-radius: 12px; font-size: 12px; text-transform: uppercase; width: fit-content;
-        }
-
-        .actions { display: flex; gap: 10px; }
-        .btn-link { color: #8b949e; text-decoration: none; font-size: 14px; }
-        .btn-link:hover { color: #58a6ff; }
-        .btn-download { background: #30363d; color: white; padding: 8px 12px; border-radius: 6px; text-decoration: none; font-size: 14px; font-weight: bold; }
-        .btn-download:hover { background: #3fb950; }
+        body { font-family: sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 600px; background: #161b22; padding: 25px; border-radius: 8px; border: 1px solid #30363d; }
+        .search-area { display: flex; gap: 8px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: white; border-radius: 4px; outline: none; }
+        button { padding: 10px 20px; background: #238636; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .item { background: #21262d; padding: 12px; margin-top: 8px; border-radius: 6px; border: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center; }
+        .ext-label { font-size: 12px; color: #8b949e; margin-top: 4px; display: block; }
+        .download-btn { color: #3fb950; text-decoration: none; font-weight: bold; font-size: 14px; border: 1px solid #3fb950; padding: 5px 10px; border-radius: 4px; }
+        .download-btn:hover { background: #3fb950; color: white; }
+        #loader { display: none; text-align: center; color: #8b949e; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>🔎 GD Macros Archive</h2>
-    
-    <div class="search-box">
-        <input type="text" id="macroName" placeholder="Название макроса..." onkeypress="if(event.key==='Enter') searchMacros()">
-        <button onclick="searchMacros()">Найти</button>
+    <div class="search-area">
+        <input type="text" id="inp" placeholder="Название макроса..." onkeypress="if(event.key==='Enter') search()">
+        <button onclick="search()">Найти</button>
     </div>
-    
-    <div id="loader">Ищем в базе данных...</div>
+    <div id="loader">Поиск...</div>
     <div id="results"></div>
 </div>
 
 <script>
-    async function searchMacros() {
-        const queryText = document.getElementById('macroName').value.trim();
-        const resultsDiv = document.getElementById('results');
+    async function search() {
+        const val = document.getElementById('inp').value.trim();
+        const resDiv = document.getElementById('results');
         const loader = document.getElementById('loader');
 
-        if (!queryText) return;
+        if (!val) return;
 
-        resultsDiv.innerHTML = '';
+        resDiv.innerHTML = '';
         loader.style.display = 'block';
 
-        const REPO = 'DRANONG/GDMacrosArchive';
-        // Поиск по всему пути files/Filtered/ без фильтрации расширения в запросе
-        const searchQuery = `${queryText} repo:${REPO} path:files/Filtered/`;
-
         try {
-            const response = await fetch(`/api/search?q=${encodeURIComponent(searchQuery)}`);
-            const data = await response.json();
+            const r = await fetch(`/api/search?q=${encodeURIComponent(val)}`);
+            const data = await r.json();
             loader.style.display = 'none';
 
             if (data.items && data.items.length > 0) {
-                data.items.forEach(item => {
-                    const fileName = item.name;
-                    // Достаем расширение из имени файла
-                    const extension = fileName.split('.').pop();
-                    const rawUrl = `https://raw.githubusercontent.com/${REPO}/main/${item.path}`;
-
+                data.items.forEach(file => {
+                    const ext = file.name.split('.').pop();
+                    // Ссылка на скачивание файла напрямую
+                    const rawUrl = `https://raw.githubusercontent.com/DRANONG/GDMacrosArchive/main/${file.path}`;
+                    
                     const div = document.createElement('div');
-                    div.className = 'result-item';
+                    div.className = 'item';
                     div.innerHTML = `
-                        <div class="info">
-                            <span class="name">${fileName}</span>
-                            <span class="ext-badge">${extension}</span>
+                        <div>
+                            <div style="font-weight: bold;">${file.name}</div>
+                            <span class="ext-label">Расширение: ${ext}</span>
                         </div>
-                        <div class="actions">
-                            <a href="${item.html_url}" target="_blank" class="btn-link">GitHub</a>
-                            <a href="${rawUrl}" target="_blank" class="btn-download">📥 Скачать</a>
-                        </div>
+                        <a href="${rawUrl}" download="${file.name}" target="_blank" class="download-btn">Скачать</a>
                     `;
-                    resultsDiv.appendChild(div);
+                    resDiv.appendChild(div);
                 });
             } else {
-                resultsDiv.innerHTML = '<p style="text-align:center; color:#8b949e;">Ничего не найдено</p>';
+                resDiv.innerHTML = '<p style="text-align:center;">Ничего не найдено</p>';
             }
-        } catch (error) {
+        } catch (e) {
             loader.style.display = 'none';
-            resultsDiv.innerHTML = '<p style="color:#f85149; text-align:center;">Ошибка сервера. Проверь токен в Vercel.</p>';
+            resDiv.innerHTML = '<p style="color:red; text-align:center;">Ошибка сервера</p>';
         }
     }
 </script>
